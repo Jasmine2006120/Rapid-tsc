@@ -39,4 +39,7 @@ Hosting & Deployment: Firebase Hosting
 https://wokwi.com/projects/465390049908652033
 
 <img width="965" height="843" alt="image" src="https://github.com/user-attachments/assets/0612e052-3748-433d-ae00-e37b50ddd549" />
+**bounty changes**
+<img width="1183" height="860" alt="Screenshot 2026-08-08 at 11 37 19 AM" src="https://github.com/user-attachments/assets/bb355e68-525f-4e62-8276-40ca856d9cf8" />
 
+<img width="1189" height="866" alt="Screenshot 2026-08-08 at 11 37 37 AM" src="https://github.com/user-attachments/assets/744f1cad-83b4-49df-b3a8-97b36eb61883" />
