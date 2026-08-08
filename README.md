@@ -33,3 +33,6 @@ AI & Pathfinding: Python / Node.js (A* Algorithm, Dijkstra's, Reinforcement Lear
 Backend / Database: Firebase / Node.js Express / WebSockets for live communication
 
 Hosting & Deployment: Firebase Hosting
+**Wokwi simulation**
+<img width="965" height="843" alt="image" src="https://github.com/user-attachments/assets/0612e052-3748-433d-ae00-e37b50ddd549" />
+
