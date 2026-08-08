@@ -70,7 +70,8 @@ class OsmService {
       final geometry = route['geometry'];
       final coordinates = geometry['coordinates'] as List;
 
-      final points = coordinates.map<OsmRoutePoint>((coordinate) {
+      final points =
+          coordinates.map<OsmRoutePoint>((coordinate) {
         return OsmRoutePoint(
           longitude: (coordinate[0] as num).toDouble(),
           latitude: (coordinate[1] as num).toDouble(),
@@ -79,8 +80,10 @@ class OsmService {
 
       return OsmRouteResult(
         points: points,
-        distanceMeters: (route['distance'] as num).toDouble(),
-        durationSeconds: (route['duration'] as num).toDouble(),
+        distanceMeters:
+            (route['distance'] as num).toDouble(),
+        durationSeconds:
+            (route['duration'] as num).toDouble(),
       );
     } catch (_) {
       return null;

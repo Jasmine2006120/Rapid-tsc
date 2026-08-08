@@ -20,6 +20,13 @@ class GreenWaveApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const vehicle = AppVehicle(
+      vehicleId: 'GW-EM-001',
+      vehicleType: 'Emergency Ambulance',
+      driverName: 'Emergency Driver',
+      registrationNumber: 'GW-AMB-001',
+    );
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'GreenWave AI',
@@ -29,14 +36,9 @@ class GreenWaveApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: DashboardScreen(
-  vehicle: AppVehicle(
-    vehicleId: 'GW-EM-001',
-    vehicleType: 'Emergency Ambulance',
-    driverName: 'Emergency Driver',
-    registrationNumber: 'GW-AMB-001',
-  ),
-),
+      home: const DashboardScreen(
+        vehicle: vehicle,
+      ),
     );
   }
 }

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-
-import '../../services/location/location_service.dart';
-import '../../services/mission/priority_engine.dart';
+import '../../services/destination/destination_service.dart';
 import '../../services/osm/osm_service.dart';
-import '../../services/osm/traffic_signal_service.dart';
 
 class LiveMapScreen extends StatefulWidget {
+  final String? destinationName;
+
   const LiveMapScreen({
     super.key,
+    this.destinationName,
   });
 
   @override
@@ -17,210 +17,260 @@ class LiveMapScreen extends StatefulWidget {
 }
 
 class _LiveMapScreenState extends State<LiveMapScreen> {
-GoogleMapController? _mapController;
+  GoogleMapController? _mapController;
 
-  static const LatLng _initialLocation = LatLng(
+  final LatLng _currentLocation = const LatLng(
     30.3752,
     76.7821,
   );
 
-  static const LatLng _destination = LatLng(
-  30.3810,
-  76.7950,
-);
+  LatLng? _destination;
+
+  final OsmService _osmService = OsmService();
+
+  bool _routeLoading = true;
 
   final Set<Marker> _markers = {};
-final Set<Polyline> _polylines = {};
+  final Set<Polyline> _polylines = {};
 
+  double? _routeDistanceMeters;
+  double? _routeDurationSeconds;
 
-  final LocationService _locationService = LocationService();
-final OsmService _osmService = OsmService();
-final TrafficSignalService _trafficSignalService =
-    TrafficSignalService();
-final PriorityEngine _priorityEngine = PriorityEngine();
-  Future<void> _loadCurrentLocation() async {
-  final position = await _locationService.getCurrentLocation();
+  @override
+  void initState() {
+    super.initState();
 
-  if (!mounted || position == null) {
-    return;
+    _setDestination();
+    _loadRealRoute();
   }
 
-  final location = LatLng(
-    position.latitude,
-    position.longitude,
-  );
+  void _setDestination() {
+    final name = widget.destinationName;
 
-  setState(() {
-    _markers.removeWhere(
-      (marker) => marker.markerId.value == 'emergency_vehicle',
+    if (name == null) {
+      _destination = const LatLng(
+        30.3810,
+        76.7950,
+      );
+      return;
+    }
+
+    final destination =
+        DestinationService.findByName(name);
+
+    if (destination == null) {
+      _destination = const LatLng(
+        30.3810,
+        76.7950,
+      );
+      return;
+    }
+
+    _destination = LatLng(
+      destination.latitude,
+      destination.longitude,
     );
+
+    _addMarkers();
+  }
+
+  void _addMarkers() {
+    final destination = _destination;
+
+    if (destination == null) {
+      return;
+    }
+
+    _markers.clear();
 
     _markers.add(
       Marker(
         markerId: const MarkerId('emergency_vehicle'),
-        position: location,
+        position: _currentLocation,
         infoWindow: const InfoWindow(
           title: 'Emergency Vehicle',
-          snippet: 'Current location',
+          snippet: 'Current vehicle location',
         ),
       ),
-    );
-  });
-
-  if (_mapController != null) {
-    await _mapController!.animateCamera(
-      CameraUpdate.newLatLngZoom(
-        location,
-        16,
-      ),
-    );
-  }
-}
-
-Future<void> _loadTrafficSignals() async {
-  final position = await _locationService.getCurrentLocation();
-
-  if (!mounted || position == null) {
-    return;
-  }
-
-  final signals = await _trafficSignalService.getTrafficSignals(
-    latitude: position.latitude,
-    longitude: position.longitude,
-    radiusMeters: 1000,
-  );
-
-  if (!mounted) {
-    return;
-  }
-
-  final routeLatitudes = <double>[];
-  final routeLongitudes = <double>[];
-
-  for (final polyline in _polylines) {
-    for (final point in polyline.points) {
-      routeLatitudes.add(point.latitude);
-      routeLongitudes.add(point.longitude);
-    }
-  }
-
-  final relevantSignals = _priorityEngine.findRelevantSignals(
-    signals: signals,
-    routeLatitudes: routeLatitudes,
-    routeLongitudes: routeLongitudes,
-    maxDistanceFromRoute: 50,
-  );
-
-  setState(() {
-    
-
-    _markers.removeWhere(
-      (marker) => marker.markerId.value.startsWith('traffic_signal_'),
-    );
-
-    for (int i = 0; i < relevantSignals.length; i++) {
-      final signal = relevantSignals[i];
-
-      _markers.add(
-        Marker(
-          markerId: MarkerId('traffic_signal_$i'),
-          position: LatLng(
-            signal.latitude,
-            signal.longitude,
-          ),
-          infoWindow: InfoWindow(
-            title: 'Traffic Signal ${i + 1}',
-            snippet: signal.distanceFromRoute == null
-                ? 'Route signal'
-                : '${signal.distanceFromRoute!.round()} m from route',
-          ),
-        ),
-      );
-    }
-  });
-}
-
-Future<void> _loadRealRoute() async {
-  final position = await _locationService.getCurrentLocation();
-
-  if (!mounted || position == null) {
-    return;
-  }
-
-  final route = await _osmService.getRealRoute(
-    startLatitude: position.latitude,
-    startLongitude: position.longitude,
-    destinationLatitude: _destination.latitude,
-    destinationLongitude: _destination.longitude,
-  );
-
-  if (!mounted || route == null || route.points.isEmpty) {
-    return;
-  }
-
-  final routePoints = route.points.map<LatLng>((point) {
-    return LatLng(
-      point.latitude,
-      point.longitude,
-    );
-  }).toList();
-
-  setState(() {
-    _polylines.clear();
-
-    _polylines.add(
-      Polyline(
-        polylineId: const PolylineId('real_osm_route'),
-        points: routePoints,
-        width: 6,
-        geodesic: false,
-      ),
-    );
-
-    _markers.removeWhere(
-      (marker) => marker.markerId.value == 'destination',
     );
 
     _markers.add(
-      const Marker(
-        markerId: MarkerId('destination'),
-        position: _destination,
+      Marker(
+        markerId: const MarkerId('destination'),
+        position: destination,
         infoWindow: InfoWindow(
-          title: 'Destination',
+          title: widget.destinationName ?? 'Destination',
         ),
       ),
     );
-  });
-}
+  }
 
-@override
-void initState() {
-  super.initState();
+  Future<void> _loadRealRoute() async {
+    final destination = _destination;
 
-  _loadCurrentLocation();
-  _loadRealRoute().then((_) {
-    _loadTrafficSignals();
-  });
-}
+    if (destination == null) {
+      if (mounted) {
+        setState(() {
+          _routeLoading = false;
+        });
+      }
+
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _routeLoading = true;
+      });
+    }
+
+    final result = await _osmService.getRealRoute(
+      startLatitude: _currentLocation.latitude,
+      startLongitude: _currentLocation.longitude,
+      destinationLatitude: destination.latitude,
+      destinationLongitude: destination.longitude,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (result == null || result.points.isEmpty) {
+      setState(() {
+        _routeLoading = false;
+      });
+
+      return;
+    }
+
+    final routePoints = result.points.map<LatLng>((point) {
+      return LatLng(
+        point.latitude,
+        point.longitude,
+      );
+    }).toList();
+
+    setState(() {
+      _routeDistanceMeters = result.distanceMeters;
+      _routeDurationSeconds = result.durationSeconds;
+
+      _polylines.clear();
+
+      _polylines.add(
+        Polyline(
+          polylineId: const PolylineId(
+            'real_emergency_route',
+          ),
+          points: routePoints,
+          width: 6,
+          jointType: JointType.round,
+        ),
+      );
+
+      _routeLoading = false;
+    });
+
+    _fitMapToRoute(routePoints);
+  }
+
+  void _fitMapToRoute(List<LatLng> points) {
+    if (_mapController == null || points.isEmpty) {
+      return;
+    }
+
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+
+    for (final point in points) {
+      if (point.latitude < minLat) {
+        minLat = point.latitude;
+      }
+
+      if (point.latitude > maxLat) {
+        maxLat = point.latitude;
+      }
+
+      if (point.longitude < minLng) {
+        minLng = point.longitude;
+      }
+
+      if (point.longitude > maxLng) {
+        maxLng = point.longitude;
+      }
+    }
+
+    _mapController!.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(
+            minLat,
+            minLng,
+          ),
+          northeast: LatLng(
+            maxLat,
+            maxLng,
+          ),
+        ),
+        70,
+      ),
+    );
+  }
+
+  String _formatDistance() {
+    final distance = _routeDistanceMeters;
+
+    if (distance == null) {
+      return '--';
+    }
+
+    if (distance >= 1000) {
+      return '${(distance / 1000).toStringAsFixed(1)} km';
+    }
+
+    return '${distance.toStringAsFixed(0)} m';
+  }
+
+  String _formatDuration() {
+    final duration = _routeDurationSeconds;
+
+    if (duration == null) {
+      return '--';
+    }
+
+    final minutes = (duration / 60).ceil();
+
+    if (minutes < 60) {
+      return '$minutes min';
+    }
+
+    final hours = minutes ~/ 60;
+    final remainingMinutes = minutes % 60;
+
+    return '${hours}h ${remainingMinutes}m';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Live Emergency Route'),
+        title: const Text(
+          'Live Emergency Route',
+        ),
       ),
       body: Stack(
         children: [
           GoogleMap(
-            initialCameraPosition: const CameraPosition(
-              target: _initialLocation,
-              zoom: 14,
+            initialCameraPosition: CameraPosition(
+              target: _currentLocation,
+              zoom: 13,
             ),
-            markers: _markers,
-            polylines: _polylines,
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
             zoomControlsEnabled: true,
+            markers: _markers,
+            polylines: _polylines,
             onMapCreated: (controller) {
               _mapController = controller;
             },
@@ -231,30 +281,113 @@ void initState() {
             left: 16,
             right: 16,
             child: Card(
+              elevation: 5,
               child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.emergency,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Emergency route monitoring active',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.emergency,
+                          color: Colors.red,
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            widget.destinationName == null
+                                ? 'Emergency Route'
+                                : 'Emergency Route → ${widget.destinationName}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _routeInfo(
+                            'Distance',
+                            _formatDistance(),
+                            Icons.route,
+                          ),
+                        ),
+                        Expanded(
+                          child: _routeInfo(
+                            'ETA',
+                            _formatDuration(),
+                            Icons.access_time,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
           ),
+
+          if (_routeLoading)
+            const Center(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 14),
+                      Text(
+                        'Calculating emergency route...',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
+    );
+  }
+
+  Widget _routeInfo(
+    String title,
+    String value,
+    IconData icon,
+  ) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+        ),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

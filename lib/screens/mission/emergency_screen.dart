@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/mission/emergency_request.dart';
 import '../../models/vehicle/app_vehicle.dart';
 import '../../services/mission/emergency_service.dart';
+import '../map/live_map_screen.dart';
 import '../signal/signal_status_screen.dart';
 
 class EmergencyScreen extends StatefulWidget {
@@ -27,13 +28,8 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
 
   bool requestSent = false;
   bool priorityGranted = false;
-  bool loading = false;
 
   Future<void> sendPriorityRequest() async {
-    setState(() {
-      loading = true;
-    });
-
     final request = emergencyService.createEmergencyRequest(
       vehicle: widget.vehicle,
       emergencyCategory: emergencyCategory,
@@ -52,7 +48,6 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
     if (!mounted) return;
 
     setState(() {
-      loading = false;
       priorityGranted = true;
       emergencyRequest = verifiedRequest;
     });
@@ -70,7 +65,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
 
     if (priorityGranted) {
       status =
-          'Priority granted. Upcoming traffic signals can be processed.';
+          'Priority granted. Upcoming traffic signal will clear your lane.';
     }
 
     return Scaffold(
@@ -201,6 +196,14 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                     widget.vehicle.vehicleType,
                   ),
                   _infoRow(
+                    'Driver',
+                    widget.vehicle.driverName,
+                  ),
+                  _infoRow(
+                    'Registration',
+                    widget.vehicle.registrationNumber,
+                  ),
+                  _infoRow(
                     'Emergency Category',
                     emergencyCategory,
                   ),
@@ -221,8 +224,8 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                         : '${emergencyRequest!.activationDistanceMeters} m',
                   ),
                   _infoRow(
-                    'Status',
-                    emergencyRequest?.status ?? 'Not submitted',
+                    'Lane Strategy',
+                    'Only route lane priority',
                   ),
                 ],
               ),
@@ -238,22 +241,11 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.red,
                 ),
-                onPressed: loading ? null : sendPriorityRequest,
-                icon: loading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.send),
-                label: Text(
-                  loading
-                      ? 'VERIFYING REQUEST...'
-                      : 'SEND PRIORITY REQUEST',
-                  style: const TextStyle(
+                onPressed: sendPriorityRequest,
+                icon: const Icon(Icons.send),
+                label: const Text(
+                  'SEND PRIORITY REQUEST',
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -265,33 +257,64 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
               height: 56,
               child: FilledButton.icon(
                 onPressed: priorityGranted
-    ? () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SignalStatusScreen(
-              vehicle: widget.vehicle,
-              emergencyCategory: emergencyCategory,
-              destination: destination,
-              priorityGranted: priorityGranted,
-              emergencyRequest: emergencyRequest,
-            ),
-          ),
-        );
-      }
-    : null,
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SignalStatusScreen(
+                              vehicle: widget.vehicle,
+                              emergencyCategory: emergencyCategory,
+                              destination: destination,
+                              priorityGranted: priorityGranted,
+                              emergencyRequest: emergencyRequest,
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
                 icon: const Icon(Icons.traffic),
                 label: const Text(
                   'VIEW SIGNAL STATUS',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+          if (requestSent)
+            const SizedBox(height: 12),
+
+          if (requestSent)
+            SizedBox(
+              height: 56,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => LiveMapScreen(
+                        destinationName: destination,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.map),
+                label: const Text(
+                  'VIEW LIVE ROUTE',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
 
           const SizedBox(height: 12),
-          
 
           OutlinedButton.icon(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Navigator.pop(context);
+            },
             icon: const Icon(Icons.cancel_outlined),
             label: const Text('Cancel Emergency'),
           ),
