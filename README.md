@@ -35,5 +35,8 @@ Backend / Database: Firebase / Node.js Express / WebSockets for live communicati
 Hosting & Deployment: Firebase Hosting
 
 **Wokwi simulation**
+
+https://wokwi.com/projects/465390049908652033
+
 <img width="965" height="843" alt="image" src="https://github.com/user-attachments/assets/0612e052-3748-433d-ae00-e37b50ddd549" />
 
