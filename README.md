@@ -1,8 +1,6 @@
 RAPID-TSC (Route-Aware Priority and Intelligent Dynamic Traffic Signal Control)
 An intelligent traffic management and dynamic routing system designed to prioritize emergency vehicles (such as ambulances) through traffic networks using real-time AI optimization, traffic signal preemption, and dynamic pathfinding.
 
-Live Demo: https://emergency-vehicle-priori-e2c70.web.app
-
 📌 Problem Statement
 In critical emergency situations, every second counts. Traditional navigation systems route emergency vehicles based on general traffic congestion, but they cannot dynamically clear traffic signals, predict signal timings, or communicate with traffic management infrastructure in real-time. This project bridges the gap by leveraging AI to:
 
