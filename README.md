@@ -1,0 +1,35 @@
+RAPID-TSC (Route-Aware Priority and Intelligent Dynamic Traffic Signal Control)
+An intelligent traffic management and dynamic routing system designed to prioritize emergency vehicles (such as ambulances) through traffic networks using real-time AI optimization, traffic signal preemption, and dynamic pathfinding.
+
+Live Demo: https://emergency-vehicle-priori-e2c70.web.app
+
+📌 Problem Statement
+In critical emergency situations, every second counts. Traditional navigation systems route emergency vehicles based on general traffic congestion, but they cannot dynamically clear traffic signals, predict signal timings, or communicate with traffic management infrastructure in real-time. This project bridges the gap by leveraging AI to:
+
+Calculate optimal, hazard-aware emergency routes.
+
+Dynamically clear or adjust signal cycles (Green Wave / Traffic Signal Preemption).
+
+Notify upcoming intersections and drivers along the route.
+
+✨ Key Features
+🚀 Dynamic Priority Routing: Uses AI pathfinding algorithms to compute the fastest route considering real-time traffic density, emergency level, and road constraints.
+
+🚥 Intelligent Signal Preemption: Simulates or communicates with smart traffic lights to grant green light corridors ("Green Wave") for incoming emergency vehicles.
+
+📍 Real-Time Tracking & Simulation: Visualizes live emergency vehicle movement, route recalculation, and traffic signal states on an interactive map.
+
+⚡ Adaptive Rerouting: Automatically recalculates routes in real-time if sudden bottlenecks or blockages occur.
+
+📊 Analytics & Monitoring: Displays ETA estimates, travel time savings, and system response performance metrics.
+
+🛠️ Tech Stack & Architecture
+Frontend / UI: React / Vue / Flutter Web (Deployed on Firebase Hosting)
+
+Mapping & Geospatial: Mapbox GL / Leaflet / Google Maps API
+
+AI & Pathfinding: Python / Node.js (A* Algorithm, Dijkstra's, Reinforcement Learning / Predictive Traffic Models)
+
+Backend / Database: Firebase / Node.js Express / WebSockets for live communication
+
+Hosting & Deployment: Firebase Hosting
